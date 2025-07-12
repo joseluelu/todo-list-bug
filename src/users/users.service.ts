@@ -1,32 +1,44 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
     private readonly logger = new Logger(UsersService.name);
+
     constructor(
         @InjectRepository(User)
         private readonly usersRepository: Repository<User>,
     ) {}
 
-    async create(body: any) {
-        const user = new User();
-        user.email = body.email;
-        user.pass = body.password;
-        user.fullname = body.fullname;
+    async create(CreateUserDto: CreateUserDto): Promise<User> {
+        try {
+            const newUser = new User();
+            newUser.email = CreateUserDto.email;
+            newUser.pass = CreateUserDto.password;
+            newUser.fullname = CreateUserDto.fullname;
 
-        await this.usersRepository.save(user);
-
-        return user;
+            return await this.usersRepository.save(newUser);
+        } catch (error) {
+            this.logger.error('Error creating user', error);
+            throw error;
+        }
     }
 
     async findOne(email: string) {
-        const user = await this.usersRepository.findOneBy({
-            email,
-        });
-
-        return user;
+        try {
+            const user = await this.usersRepository.findOneBy({
+                email,
+            });
+            return user;
+        } catch (error) {
+            this.logger.error(
+                `Error fetching user with email: ${email}`,
+                error,
+            );
+            throw error;
+        }
     }
 }
